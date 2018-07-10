@@ -1,0 +1,4 @@
+source("thesim")
+med<-c(med,unname(unlist(summary(fit)$table[,'median'][2])))
+pv<-c(pv,pchisq(df$chisq,df=1,lower=F))
+

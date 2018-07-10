@@ -1,0 +1,53 @@
+# returns a data frame of two variables which correlate with a population correlation of rho
+# If desired, one of both variables can be fixed to an existing variable by specifying x
+getBiCop <- function(n, rho, mar.fun=rnorm, x = NULL, ...) {
+     if (!is.null(x)) {X1 <- x} else {X1 <- mar.fun(n, ...)}
+     if (!is.null(x) & length(x) != n) warning("Variable x does not have the same length as n!")
+
+     C <- matrix(rho, nrow = 2, ncol = 2)
+     diag(C) <- 1
+
+     C <- chol(C)
+
+     X2 <- mar.fun(n)
+     X <- cbind(X1,X2)
+
+     # induce correlation (does not change X1)
+     df <- X %*% C
+
+     ## if desired: check results
+     #all.equal(X1,X[,1])
+     #cor(X)
+
+     return(df)
+}
+# source: https://stats.stackexchange.com/questions/15011/generate-a-random-variable-with-a-defined-correlation-to-an-existing-variable/15035#15035
+# author: Felix S (https://stats.stackexchange.com/users/6082/felix-s)
+
+m0<-getBiCop(length(failtimes),0.0,x=failtimes)
+m0[,2]<-(m0[,2]+1.0)/max(m0[,2])
+m0[,2]<-round(m0[,2],0)
+m0[,2]<-abs(m0[,2])
+colnames(m0)=c('os','tx')
+m0<-data.frame(m0)
+m0fit<-survfit(Surv(m0$os)~m0$tx)
+m0diff<-survdiff(Surv(m0$os)~m0$tx)
+p.value0=round(pchisq(m0diff$chisq, length(m0diff$n)-1, lower.tail = FALSE),3)
+
+m<-getBiCop(length(failtimes),0.2,x=failtimes)
+m[,2]<-(m[,2]+1.0)/max(m[,2])
+m[,2]<-round(m[,2],0)
+m[,2]<-abs(m[,2])
+colnames(m)=c('os','tx')
+m<-data.frame(m)
+mfit<-survfit(Surv(m$os)~m$tx)
+mdiff<-survdiff(Surv(m$os)~m$tx)
+p.value=round(pchisq(mdiff$chisq, length(mdiff$n)-1, lower.tail = FALSE),3)
+
+par(mfrow=c(2,2))
+plot(m0,yaxp=c(0,1,1))
+plot(m0fit,lty=c(1,2),bty='n')
+legend(2.5,0.9,c('p = ',p.value0),bty='n',horiz=T)
+plot(m,yaxp=c(0,1,1))
+plot(mfit,lty=c(1,2),bty='n')
+legend(2.5,0.9,c('p = ',p.value),bty='n',horiz=T)

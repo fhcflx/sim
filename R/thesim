@@ -1,0 +1,18 @@
+library(survival)
+tdom <- seq(0, 5, by=0.01)
+haz <- rep(0,length(tdom))
+haz[tdom <= 1] <- exp(-0.1*tdom[tdom <= 1])
+haz[tdom > 1 & tdom <= 2.5] <- exp(-0.1)
+haz[tdom > 2.5] <- exp(0.1*(tdom[tdom > 2.5] - 3.5))
+cumhaz <- cumsum(haz*0.01)
+Surv <- exp(-cumhaz)
+u <- runif(100)
+failtimes <- tdom[colSums(outer(Surv, u, `>`))]
+dipg=read.csv('~/git/github/valkyrie/_data/dipg.csv')
+g=c(rep("d",56),rep("s",length(failtimes)))
+os=c(dipg$os/12,failtimes)
+s=c(dipg$status,round(u+0.4,0))[1:length(os)]
+a=data.frame(os,s,g)
+df=survdiff(Surv(os,s)~g,a)
+fit=survfit(Surv(os,s)~g,a)
+su=summary(survfit(Surv(os,s)~g,a))
